@@ -15,14 +15,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -43,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,9 +70,10 @@ enum class DashboardFace(val label: String) {
 @Composable
 fun DashboardScreen(viewModel: DashboardViewModel) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val settings by viewModel.settings.collectAsStateWithLifecycle()
 
     var face by rememberSaveable { mutableStateOf(DashboardFace.ANALOG) }
-    var showFaceDialog by rememberSaveable { mutableStateOf(false) }
+    var showSettings by rememberSaveable { mutableStateOf(false) }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
@@ -83,27 +88,28 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
     Column(
         modifier = Modifier.fillMaxSize().background(Background),
     ) {
-        TopBar(onSettingsClick = { showFaceDialog = true })
+        TopBar(onSettingsClick = { showSettings = true })
         Box(
             modifier = Modifier.fillMaxWidth().weight(1f),
             contentAlignment = Alignment.Center,
         ) {
             when (face) {
-                DashboardFace.ANALOG -> AnalogFace(state)
+                DashboardFace.ANALOG -> AnalogFace(state, settings)
                 DashboardFace.DIGITAL -> DigitalFace(state)
             }
         }
         BottomBar(state = state)
     }
 
-    if (showFaceDialog) {
-        FaceSelectionDialog(
-            current = face,
-            onSelect = {
-                face = it
-                showFaceDialog = false
+    if (showSettings) {
+        SettingsDialog(
+            currentFace = face,
+            currentSettings = settings,
+            onApply = { newFace, newMaxSpeed, newMaxAltitude ->
+                face = newFace
+                viewModel.updateSettings(newMaxSpeed, newMaxAltitude)
             },
-            onDismiss = { showFaceDialog = false },
+            onDismiss = { showSettings = false },
         )
     }
 }
@@ -135,12 +141,14 @@ private fun TopBar(onSettingsClick: () -> Unit) {
 }
 
 @Composable
-private fun AnalogFace(state: DashboardState) {
+private fun AnalogFace(state: DashboardState, settings: DashboardSettings) {
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
         val panelSize = minOf(maxWidth - 16.dp, (maxHeight - 24.dp) / 2)
+        val maxSpeed = settings.maxSpeed.toFloat()
+        val maxAltitude = settings.maxAltitude.toFloat()
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -149,15 +157,15 @@ private fun AnalogFace(state: DashboardState) {
                 Gauge(
                     value = state.speedKmh,
                     minValue = 0f,
-                    maxValue = 200f,
+                    maxValue = maxSpeed,
                     title = "SPEED",
                     unit = "km/h",
-                    majorStep = 20f,
+                    majorStep = niceMajorStep(maxSpeed, targetMajors = 10),
                     minorPerMajor = 3,
                     zones = listOf(
-                        GaugeZone(110f, 140f, Color(0xFF7BB661)),
-                        GaugeZone(140f, 170f, Color(0xFFE6A23C)),
-                        GaugeZone(170f, 200f, Color(0xFFE54A2E)),
+                        GaugeZone(maxSpeed * 0.55f, maxSpeed * 0.70f, Color(0xFF7BB661)),
+                        GaugeZone(maxSpeed * 0.70f, maxSpeed * 0.85f, Color(0xFFE6A23C)),
+                        GaugeZone(maxSpeed * 0.85f, maxSpeed, Color(0xFFE54A2E)),
                     ),
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -166,16 +174,29 @@ private fun AnalogFace(state: DashboardState) {
                 Gauge(
                     value = state.altitudeM,
                     minValue = 0f,
-                    maxValue = 2500f,
+                    maxValue = maxAltitude,
                     title = "ALTITUDE",
                     unit = "m",
-                    majorStep = 250f,
+                    majorStep = niceMajorStep(maxAltitude, targetMajors = 10),
                     minorPerMajor = 4,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
         }
     }
+}
+
+private fun niceMajorStep(range: Float, targetMajors: Int): Float {
+    val raw = range / targetMajors
+    val pow10 = Math.pow(10.0, Math.floor(Math.log10(raw.toDouble()))).toFloat()
+    val n = raw / pow10
+    val nice = when {
+        n < 1.5f -> 1f
+        n < 3f -> 2f
+        n < 7f -> 5f
+        else -> 10f
+    }
+    return nice * pow10
 }
 
 @Composable
@@ -303,33 +324,85 @@ private fun ReadingBlock(label: String, value: String, unit: String, color: Colo
 }
 
 @Composable
-private fun FaceSelectionDialog(
-    current: DashboardFace,
-    onSelect: (DashboardFace) -> Unit,
+private fun SettingsDialog(
+    currentFace: DashboardFace,
+    currentSettings: DashboardSettings,
+    onApply: (face: DashboardFace, maxSpeed: Int, maxAltitude: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    var draftFace by rememberSaveable { mutableStateOf(currentFace) }
+    var maxSpeedText by rememberSaveable {
+        mutableStateOf(currentSettings.maxSpeed.toString())
+    }
+    var maxAltitudeText by rememberSaveable {
+        mutableStateOf(currentSettings.maxAltitude.toString())
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Dashboard face") },
+        title = { Text("Settings") },
         text = {
             Column {
+                Text(
+                    "Face",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
                 DashboardFace.entries.forEach { f ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(f) }
-                            .padding(vertical = 6.dp),
+                            .clickable { draftFace = f }
+                            .padding(vertical = 4.dp),
                     ) {
-                        RadioButton(selected = current == f, onClick = { onSelect(f) })
+                        RadioButton(
+                            selected = draftFace == f,
+                            onClick = { draftFace = f },
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text(f.label)
                     }
                 }
+                Spacer(Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = maxSpeedText,
+                    onValueChange = {
+                        maxSpeedText = it.filter(Char::isDigit).take(4)
+                    },
+                    label = { Text("Max speed (km/h)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = maxAltitudeText,
+                    onValueChange = {
+                        maxAltitudeText = it.filter(Char::isDigit).take(5)
+                    },
+                    label = { Text("Max altitude (m)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Close") }
+            TextButton(onClick = {
+                val newMaxSpeed = maxSpeedText.toIntOrNull()
+                    ?.coerceIn(50, 500)
+                    ?: currentSettings.maxSpeed
+                val newMaxAltitude = maxAltitudeText.toIntOrNull()
+                    ?.coerceIn(100, 20000)
+                    ?: currentSettings.maxAltitude
+                onApply(draftFace, newMaxSpeed, newMaxAltitude)
+                onDismiss()
+            }) { Text("Save") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
 }

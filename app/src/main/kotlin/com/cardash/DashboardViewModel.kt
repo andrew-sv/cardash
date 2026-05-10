@@ -27,9 +27,15 @@ data class DashboardState(
 class DashboardViewModel(app: Application) : AndroidViewModel(app) {
 
     private val client = LocationServices.getFusedLocationProviderClient(app)
+    private val settingsRepo = SettingsRepository(app)
 
     private val _state = MutableStateFlow(DashboardState())
     val state: StateFlow<DashboardState> = _state.asStateFlow()
+
+    val settings: StateFlow<DashboardSettings> = settingsRepo.settings
+
+    fun updateSettings(maxSpeed: Int, maxAltitude: Int) =
+        settingsRepo.update(maxSpeed, maxAltitude)
 
     private val callback = object : LocationCallback() {
         override fun onLocationResult(result: LocationResult) {

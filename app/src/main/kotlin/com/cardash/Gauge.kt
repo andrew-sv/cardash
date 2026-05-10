@@ -82,23 +82,44 @@ private fun DrawScope.drawGauge(
     val cx = size.width / 2f
     val cy = size.height / 2f
     val outerR = minOf(cx, cy) * 0.98f
-    val bezelW = outerR * 0.05f
+    val bezelW = outerR * 0.10f
     val faceR = outerR - bezelW
     val totalRange = maxValue - minValue
 
     drawCircle(
-        brush = Brush.radialGradient(
-            colors = listOf(Color(0xFF3A3A3C), Color(0xFF0A0A0B)),
-            center = Offset(cx - outerR * 0.4f, cy - outerR * 0.4f),
-            radius = outerR * 1.6f,
+        brush = Brush.sweepGradient(
+            colors = listOf(
+                Color(0xFF3A3A3E),
+                Color(0xFF1F1F22),
+                Color(0xFF1A1A1D),
+                Color(0xFF2C2C30),
+                Color(0xFF6A6A70),
+                Color(0xFF8A8A90),
+                Color(0xFF6A6A70),
+                Color(0xFF2C2C30),
+                Color(0xFF1A1A1D),
+                Color(0xFF1F1F22),
+                Color(0xFF3A3A3E),
+            ),
+            center = Offset(cx, cy),
         ),
         radius = outerR,
         center = Offset(cx, cy),
     )
     drawCircle(
-        color = Color(0xFF111113),
-        radius = outerR - bezelW * 0.3f,
+        color = Color(0xFF050507),
+        radius = outerR - bezelW * 0.18f,
         center = Offset(cx, cy),
+    )
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(Color(0xFF55555A), Color(0xFF1A1A1D)),
+            center = Offset(cx - outerR * 0.3f, cy - outerR * 0.4f),
+            radius = outerR,
+        ),
+        radius = faceR + bezelW * 0.18f,
+        center = Offset(cx, cy),
+        style = Stroke(width = bezelW * 0.10f),
     )
 
     drawCircle(
