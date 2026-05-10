@@ -152,7 +152,7 @@ private fun DrawScope.drawGauge(
         )
     }
 
-    val labelRadius = tickOuterR - majorLen - faceR * 0.07f
+    val labelRadius = tickOuterR - majorLen - faceR * 0.1f
     val labelPaint = Paint().apply {
         color = android.graphics.Color.argb(255, 237, 230, 214)
         textAlign = Paint.Align.CENTER
@@ -189,8 +189,8 @@ private fun DrawScope.drawGauge(
         typeface = Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL)
     }
     drawIntoCanvas { canvas ->
-        canvas.nativeCanvas.drawText(title, cx, cy - faceR * 0.18f, titlePaint)
-        canvas.nativeCanvas.drawText(unit, cx, cy - faceR * 0.06f, unitPaint)
+        canvas.nativeCanvas.drawText(title, cx, cy - faceR * 0.18f - 30f, titlePaint)
+        canvas.nativeCanvas.drawText(unit, cx, cy - faceR * 0.06f - 30f, unitPaint)
     }
 
     val windowW = faceR * 0.55f
