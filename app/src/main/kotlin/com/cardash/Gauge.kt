@@ -14,9 +14,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.nativeCanvas
 import kotlin.math.PI
 import kotlin.math.cos
@@ -223,25 +225,24 @@ private fun DrawScope.drawGauge(
     }
 
     val needleT = ((needleValue - minValue) / totalRange).coerceIn(0f, 1f)
-    val needleAngleRad = ((START_ANGLE_DEG + needleT * SWEEP_DEG) * PI / 180.0).toFloat()
-    val needleLen = faceR * 0.78f
-    val needleBack = faceR * 0.16f
-    val nx = cx + needleLen * cos(needleAngleRad)
-    val ny = cy + needleLen * sin(needleAngleRad)
-    val bx = cx - needleBack * cos(needleAngleRad)
-    val by = cy - needleBack * sin(needleAngleRad)
-    drawLine(
-        color = Color.Black.copy(alpha = 0.5f),
-        start = Offset(bx + 2f, by + 2f),
-        end = Offset(nx + 2f, ny + 2f),
-        strokeWidth = faceR * 0.028f,
-    )
-    drawLine(
-        color = FaceCream,
-        start = Offset(bx, by),
-        end = Offset(nx, ny),
-        strokeWidth = faceR * 0.025f,
-    )
+    val needleAngleDeg = START_ANGLE_DEG + needleT * SWEEP_DEG
+    val needleLen = faceR * 0.80f
+    val baseHalf = faceR * 0.024f
+    val tipBaseHalf = faceR * 0.009f
+    val tipStart = needleLen * 0.90f
+
+    val needlePath = Path().apply {
+        moveTo(cx, cy - baseHalf)
+        lineTo(cx + tipStart, cy - tipBaseHalf)
+        lineTo(cx + needleLen, cy)
+        lineTo(cx + tipStart, cy + tipBaseHalf)
+        lineTo(cx, cy + baseHalf)
+        close()
+    }
+
+    rotate(degrees = needleAngleDeg, pivot = Offset(cx, cy)) {
+        drawPath(needlePath, color = FaceCream)
+    }
 
     drawCircle(
         color = Color(0xFF2A2A2C),
