@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Kotlin compiler cache
+.kotlin/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Keystore
+*.jks
+*.keystore
+release/
+
+# OS
+.DS_Store
+Thumbs.db
