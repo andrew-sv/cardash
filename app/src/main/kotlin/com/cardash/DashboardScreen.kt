@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,9 +35,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -133,38 +140,130 @@ private fun AnalogFace(state: DashboardState) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        val gaugeSize = minOf(maxWidth - 16.dp, (maxHeight - 24.dp) / 2)
+        val panelSize = minOf(maxWidth - 16.dp, (maxHeight - 24.dp) / 2)
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Gauge(
-                value = state.speedKmh,
-                minValue = 0f,
-                maxValue = 200f,
-                title = "SPEED",
-                unit = "km/h",
-                majorStep = 20f,
-                minorPerMajor = 3,
-                zones = listOf(
-                    GaugeZone(110f, 140f, Color(0xFF7BB661)),
-                    GaugeZone(140f, 170f, Color(0xFFE6A23C)),
-                    GaugeZone(170f, 200f, Color(0xFFE54A2E)),
-                ),
-                modifier = Modifier.size(gaugeSize),
-            )
-            Gauge(
-                value = state.altitudeM,
-                minValue = 0f,
-                maxValue = 2500f,
-                title = "ALTITUDE",
-                unit = "m",
-                majorStep = 250f,
-                minorPerMajor = 4,
-                modifier = Modifier.size(gaugeSize),
-            )
+            GaugePanel(size = panelSize) {
+                Gauge(
+                    value = state.speedKmh,
+                    minValue = 0f,
+                    maxValue = 200f,
+                    title = "SPEED",
+                    unit = "km/h",
+                    majorStep = 20f,
+                    minorPerMajor = 3,
+                    zones = listOf(
+                        GaugeZone(110f, 140f, Color(0xFF7BB661)),
+                        GaugeZone(140f, 170f, Color(0xFFE6A23C)),
+                        GaugeZone(170f, 200f, Color(0xFFE54A2E)),
+                    ),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            GaugePanel(size = panelSize) {
+                Gauge(
+                    value = state.altitudeM,
+                    minValue = 0f,
+                    maxValue = 2500f,
+                    title = "ALTITUDE",
+                    unit = "m",
+                    majorStep = 250f,
+                    minorPerMajor = 4,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun GaugePanel(
+    size: Dp,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val cornerRadius = 22.dp
+    val screwInset = 14.dp
+    val screwRadius = 7.dp
+    val gaugeInset = 18.dp
+
+    Box(
+        modifier = modifier
+            .size(size)
+            .drawBehind {
+                val cr = cornerRadius.toPx()
+                val si = screwInset.toPx()
+                val sr = screwRadius.toPx()
+                val w = this.size.width
+                val h = this.size.height
+
+                drawRoundRect(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color(0xFF202023), Color(0xFF131316)),
+                    ),
+                    cornerRadius = CornerRadius(cr),
+                )
+                drawRoundRect(
+                    color = Color(0xFF2D2D31),
+                    cornerRadius = CornerRadius(cr),
+                    style = Stroke(width = 1.dp.toPx()),
+                )
+
+                listOf(
+                    Offset(si + sr, si + sr),
+                    Offset(w - si - sr, si + sr),
+                    Offset(si + sr, h - si - sr),
+                    Offset(w - si - sr, h - si - sr),
+                ).forEach { center ->
+                    drawScrew(center, sr)
+                }
+            }
+            .padding(gaugeInset),
+        contentAlignment = Alignment.Center,
+        content = content,
+    )
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawScrew(center: Offset, radius: Float) {
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(Color(0xFF36363A), Color(0xFF0E0E10)),
+            center = Offset(center.x - radius * 0.4f, center.y - radius * 0.4f),
+            radius = radius * 1.6f,
+        ),
+        radius = radius,
+        center = center,
+    )
+    drawCircle(
+        color = Color(0xFF050506),
+        radius = radius * 0.85f,
+        center = center,
+    )
+    drawCircle(
+        color = Color(0xFF1F1F22),
+        radius = radius * 0.85f,
+        center = center,
+        style = Stroke(width = radius * 0.08f),
+    )
+    drawLine(
+        color = Color(0xFF000000),
+        start = Offset(center.x - radius * 0.55f, center.y),
+        end = Offset(center.x + radius * 0.55f, center.y),
+        strokeWidth = radius * 0.18f,
+    )
+    drawLine(
+        color = Color(0xFF000000),
+        start = Offset(center.x, center.y - radius * 0.55f),
+        end = Offset(center.x, center.y + radius * 0.55f),
+        strokeWidth = radius * 0.18f,
+    )
+    drawCircle(
+        color = Color(0xFF55555A).copy(alpha = 0.55f),
+        radius = radius * 0.22f,
+        center = Offset(center.x - radius * 0.35f, center.y - radius * 0.35f),
+    )
 }
 
 @Composable
