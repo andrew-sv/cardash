@@ -15,8 +15,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.res.ResourcesCompat
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -114,6 +117,10 @@ private fun EightiesGauge(
         label = "eightiesneedle",
     )
     val displayText = if (value == null) "--" else valueFormatter(value)
+    val context = LocalContext.current
+    val digitalTypeface = remember(context) {
+        ResourcesCompat.getFont(context, R.font.dseg7_classic)
+    }
 
     Canvas(modifier = modifier) {
         drawEightiesGauge(
@@ -126,6 +133,7 @@ private fun EightiesGauge(
             majorStep = majorStep,
             minorPerMajor = minorPerMajor,
             zones = zones,
+            digitalTypeface = digitalTypeface,
         )
     }
 }
@@ -140,6 +148,7 @@ private fun DrawScope.drawEightiesGauge(
     majorStep: Float,
     minorPerMajor: Int,
     zones: List<GaugeZone>,
+    digitalTypeface: Typeface?,
 ) {
     val cx = size.width / 2f
     val cy = size.height / 2f
@@ -256,12 +265,12 @@ private fun DrawScope.drawEightiesGauge(
     val displayPaint = Paint().apply {
         color = android.graphics.Color.argb(255, 95, 232, 80)
         textAlign = Paint.Align.CENTER
-        textSize = faceR * 0.18f
+        textSize = faceR * 0.14f
         isAntiAlias = true
-        typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        typeface = digitalTypeface ?: Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
     }
     drawIntoCanvas { canvas ->
-        val baseline = windowTop + windowH / 2f + displayPaint.textSize / 3f
+        val baseline = windowTop + windowH / 2f + displayPaint.textSize / 2f
         canvas.nativeCanvas.drawText(displayText, cx, baseline, displayPaint)
     }
 
