@@ -67,6 +67,7 @@ enum class DashboardFace(val label: String) {
     DIGITAL("Digital"),
     STEAMPUNK("Steampunk"),
     EIGHTIES("80s"),
+    EIGHTIES_TACHO("80st"),
 }
 
 @Composable
@@ -100,6 +101,7 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                 DashboardFace.DIGITAL -> DigitalFace(state)
                 DashboardFace.STEAMPUNK -> SteampunkFace(state, settings)
                 DashboardFace.EIGHTIES -> EightiesFace(state, settings)
+                DashboardFace.EIGHTIES_TACHO -> EightiesTachoFace(state, settings)
             }
         }
         BottomBar(state = state)
