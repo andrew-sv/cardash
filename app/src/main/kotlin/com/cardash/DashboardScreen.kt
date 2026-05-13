@@ -65,6 +65,8 @@ private val MutedText = Color(0xFF9A9A9A)
 enum class DashboardFace(val label: String) {
     ANALOG("Analog"),
     DIGITAL("Digital"),
+    STEAMPUNK("Steampunk"),
+    EIGHTIES("80s"),
 }
 
 @Composable
@@ -96,6 +98,8 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
             when (face) {
                 DashboardFace.ANALOG -> AnalogFace(state, settings)
                 DashboardFace.DIGITAL -> DigitalFace(state)
+                DashboardFace.STEAMPUNK -> SteampunkFace(state, settings)
+                DashboardFace.EIGHTIES -> EightiesFace(state, settings)
             }
         }
         BottomBar(state = state)
@@ -163,9 +167,9 @@ private fun AnalogFace(state: DashboardState, settings: DashboardSettings) {
                     majorStep = niceMajorStep(maxSpeed, targetMajors = 10),
                     minorPerMajor = 3,
                     zones = listOf(
-                        GaugeZone(maxSpeed * 0.55f, maxSpeed * 0.70f, Color(0xFF7BB661)),
-                        GaugeZone(maxSpeed * 0.70f, maxSpeed * 0.85f, Color(0xFFE6A23C)),
-                        GaugeZone(maxSpeed * 0.85f, maxSpeed, Color(0xFFE54A2E)),
+                        GaugeZone(maxSpeed * 0.5f, maxSpeed * 0.65f, Color(0xFF7BB661)),
+                        GaugeZone(maxSpeed * 0.65f, maxSpeed * 0.8f, Color(0xFFE6A23C)),
+                        GaugeZone(maxSpeed * 0.8f, maxSpeed, Color(0xFFE54A2E)),
                     ),
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -186,7 +190,7 @@ private fun AnalogFace(state: DashboardState, settings: DashboardSettings) {
     }
 }
 
-private fun niceMajorStep(range: Float, targetMajors: Int): Float {
+internal fun niceMajorStep(range: Float, targetMajors: Int): Float {
     val raw = range / targetMajors
     val pow10 = Math.pow(10.0, Math.floor(Math.log10(raw.toDouble()))).toFloat()
     val n = raw / pow10
