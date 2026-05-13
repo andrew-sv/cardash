@@ -14,8 +14,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -48,6 +54,104 @@ private val ENeedleCream = Color(0xFFEDE3A8)
 private val ELcdLime = Color(0xFF5FE850)
 private val ELcdLimeDim = Color(0xFF22381A)
 private val ELcdBg = Color(0xFF080D06)
+
+private val GearRpmPerKmh = floatArrayOf(100.51f, 54.35f, 34.5f, 25f, 22.98f, 18.13f)
+private const val MinRpm = 800f
+private const val DownshiftRpm = 1500f
+private const val ModerateUpshiftRpm = 2500f
+private const val FastUpshiftRpm = 4000f
+private const val FastAccelThresholdMps2 = 2.0f
+private const val AccelEmaAlpha = 0.4f
+
+private fun rpmFor(gear: Int, speedKmh: Float): Float =
+    GearRpmPerKmh[gear - 1] * speedKmh.coerceAtLeast(0f)
+
+private fun resolveGear(startGear: Int, speedKmh: Float, accelMps2: Float): Int {
+    var gear = startGear.coerceIn(1, 6)
+    val upshiftRpm = if (accelMps2 >= FastAccelThresholdMps2) FastUpshiftRpm else ModerateUpshiftRpm
+    while (gear < 6 && rpmFor(gear, speedKmh) >= upshiftRpm) gear++
+    while (gear > 1 && rpmFor(gear, speedKmh) <= DownshiftRpm) {
+        if (rpmFor(gear - 1, speedKmh) >= upshiftRpm) break
+        gear--
+    }
+    return gear
+}
+
+@Composable
+fun EightiesTachoFace(state: DashboardState, settings: DashboardSettings) {
+    var gear by rememberSaveable { mutableIntStateOf(1) }
+    var smoothedAccel by remember { mutableFloatStateOf(0f) }
+    var lastSample by remember { mutableStateOf<Pair<Float, Long>?>(null) }
+
+    LaunchedEffect(state.speedKmh) {
+        val s = state.speedKmh ?: return@LaunchedEffect
+        val now = System.currentTimeMillis()
+        val prev = lastSample
+        if (prev != null) {
+            val dt = (now - prev.second) / 1000f
+            if (dt > 0.05f) {
+                val instant = (s - prev.first) / 3.6f / dt
+                smoothedAccel = smoothedAccel * (1f - AccelEmaAlpha) + instant * AccelEmaAlpha
+            }
+        }
+        lastSample = s to now
+        gear = resolveGear(gear, s, smoothedAccel)
+    }
+
+    val displayRpm = state.speedKmh?.let {
+        maxOf(rpmFor(gear, it), MinRpm)
+    }
+    val rpmDialValue = displayRpm?.div(100f)
+    val gearText = if (state.speedKmh == null) "--" else gear.toString()
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(EBackground),
+        contentAlignment = Alignment.Center,
+    ) {
+        val panelSize = minOf(maxWidth - 8.dp, (maxHeight - 12.dp) / 2)
+        val maxSpeed = settings.maxSpeed.toFloat()
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Box(modifier = Modifier.size(panelSize), contentAlignment = Alignment.Center) {
+                EightiesGauge(
+                    value = state.speedKmh,
+                    minValue = 0f,
+                    maxValue = maxSpeed,
+                    title = "SPEED",
+                    unit = "km/h",
+                    majorStep = niceMajorStep(maxSpeed, targetMajors = 10),
+                    minorPerMajor = 3,
+                    zones = listOf(
+                        GaugeZone(maxSpeed * 0.5f, maxSpeed * 0.65f, Color(0xFF6CC55B)),
+                        GaugeZone(maxSpeed * 0.65f, maxSpeed * 0.8f, Color(0xFFD8B73C)),
+                        GaugeZone(maxSpeed * 0.8f, maxSpeed, Color(0xFFD84A2A)),
+                    ),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+            Box(modifier = Modifier.size(panelSize), contentAlignment = Alignment.Center) {
+                EightiesGauge(
+                    value = rpmDialValue,
+                    minValue = 0f,
+                    maxValue = 70f,
+                    title = "RPM",
+                    unit = "x100",
+                    majorStep = 10f,
+                    minorPerMajor = 4,
+                    zones = listOf(
+                        GaugeZone(60f, 70f, Color(0xFFD84A2A)),
+                    ),
+                    displayTextOverride = gearText,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun EightiesFace(state: DashboardState, settings: DashboardSettings) {
@@ -108,6 +212,7 @@ private fun EightiesGauge(
     minorPerMajor: Int = 4,
     zones: List<GaugeZone> = emptyList(),
     valueFormatter: (Float) -> String = { "%.0f".format(it) },
+    displayTextOverride: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val target = (value ?: minValue).coerceIn(minValue, maxValue)
@@ -116,7 +221,8 @@ private fun EightiesGauge(
         animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
         label = "eightiesneedle",
     )
-    val displayText = if (value == null) "--" else valueFormatter(value)
+    val displayText = displayTextOverride
+        ?: if (value == null) "--" else valueFormatter(value)
     val context = LocalContext.current
     val digitalTypeface = remember(context) {
         ResourcesCompat.getFont(context, R.font.dseg7_classic)
