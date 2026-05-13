@@ -208,7 +208,7 @@ private fun GaugePanel(
     val cornerRadius = 22.dp
     val screwInset = 14.dp
     val screwRadius = 7.dp
-    val gaugeInset = 18.dp
+    val gaugeInset = 4.dp
 
     Box(
         modifier = modifier

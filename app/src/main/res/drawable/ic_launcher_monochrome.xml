@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:pathData="M 84,54 A 30,30 0 1,1 24,54 A 30,30 0 1,1 84,54" />
+
+    <group android:pivotX="54" android:pivotY="54" android:rotation="-135">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="-90">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="-45">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="0">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="45">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="90">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+    <group android:pivotX="54" android:pivotY="54" android:rotation="135">
+        <path android:strokeColor="#FFFFFF" android:strokeWidth="3"
+            android:pathData="M 54,23 L 54,29" />
+    </group>
+
+    <group android:pivotX="54" android:pivotY="54" android:rotation="55">
+        <path android:fillColor="#FFFFFF"
+            android:pathData="M 50,54 L 52,32 L 54,28 L 56,32 L 58,54 Z" />
+    </group>
+
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M 54,49 A 5,5 0 1,0 54,59 A 5,5 0 1,0 54,49 Z" />
+</vector>
