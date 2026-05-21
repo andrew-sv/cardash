@@ -126,7 +126,6 @@ fun EightiesTachoFace(state: DashboardState, settings: DashboardSettings) {
                     majorStep = niceMajorStep(maxSpeed, targetMajors = 10),
                     minorPerMajor = 3,
                     zones = listOf(
-                        GaugeZone(maxSpeed * 0.5f, maxSpeed * 0.65f, Color(0xFF6CC55B)),
                         GaugeZone(maxSpeed * 0.65f, maxSpeed * 0.8f, Color(0xFFD8B73C)),
                         GaugeZone(maxSpeed * 0.8f, maxSpeed, Color(0xFFD84A2A)),
                     ),
@@ -178,7 +177,6 @@ fun EightiesFace(state: DashboardState, settings: DashboardSettings) {
                     majorStep = niceMajorStep(maxSpeed, targetMajors = 10),
                     minorPerMajor = 3,
                     zones = listOf(
-                        GaugeZone(maxSpeed * 0.5f, maxSpeed * 0.65f, Color(0xFF6CC55B)),
                         GaugeZone(maxSpeed * 0.65f, maxSpeed * 0.8f, Color(0xFFD8B73C)),
                         GaugeZone(maxSpeed * 0.8f, maxSpeed, Color(0xFFD84A2A)),
                     ),

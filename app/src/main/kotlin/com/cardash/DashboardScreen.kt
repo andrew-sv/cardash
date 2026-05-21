@@ -68,6 +68,7 @@ enum class DashboardFace(val label: String) {
     STEAMPUNK("Steampunk"),
     EIGHTIES("80s"),
     EIGHTIES_TACHO("80st"),
+    G_METER("G-meter"),
 }
 
 @Composable
@@ -102,6 +103,7 @@ fun DashboardScreen(viewModel: DashboardViewModel) {
                 DashboardFace.STEAMPUNK -> SteampunkFace(state, settings)
                 DashboardFace.EIGHTIES -> EightiesFace(state, settings)
                 DashboardFace.EIGHTIES_TACHO -> EightiesTachoFace(state, settings)
+                DashboardFace.G_METER -> GMeterFace(state, settings)
             }
         }
         BottomBar(state = state)
@@ -169,7 +171,6 @@ private fun AnalogFace(state: DashboardState, settings: DashboardSettings) {
                     majorStep = niceMajorStep(maxSpeed, targetMajors = 10),
                     minorPerMajor = 3,
                     zones = listOf(
-                        GaugeZone(maxSpeed * 0.5f, maxSpeed * 0.65f, Color(0xFF7BB661)),
                         GaugeZone(maxSpeed * 0.65f, maxSpeed * 0.8f, Color(0xFFE6A23C)),
                         GaugeZone(maxSpeed * 0.8f, maxSpeed, Color(0xFFE54A2E)),
                     ),
@@ -206,7 +207,7 @@ internal fun niceMajorStep(range: Float, targetMajors: Int): Float {
 }
 
 @Composable
-private fun GaugePanel(
+internal fun GaugePanel(
     size: Dp,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
